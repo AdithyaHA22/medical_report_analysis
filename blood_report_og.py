@@ -1,4 +1,8 @@
 import streamlit as st
+
+# Set page config at the beginning of the script (must be the first Streamlit command)
+st.set_page_config(page_title="Blood Report Analyzer", layout="wide")
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -28,14 +32,27 @@ try:
     TESSERACT_AVAILABLE = True
 except ImportError:
     TESSERACT_AVAILABLE = False
-    st.warning("pytesseract not available. OCR functionality will be limited.")
+    # Move st.warning to main function rather than at import time
+    # st.warning("pytesseract not available. OCR functionality will be limited.")
 
 try:
     import pdf2image
     PDF_IMAGE_AVAILABLE = True
 except ImportError:
     PDF_IMAGE_AVAILABLE = False
-    st.warning("pdf2image not available. PDF processing will be disabled.")
+    # Move st.warning to main function rather than at import time
+    # st.warning("pdf2image not available. PDF processing will be disabled.")
+
+# Try to import transformers, with proper error handling
+TRANSFORMERS_AVAILABLE = False
+try:
+    from transformers import pipeline
+    summarizer = pipeline("summarization")
+    TRANSFORMERS_AVAILABLE = True
+except (ImportError, RuntimeError, Exception) as e:
+    # Move st.warning to main function rather than at import time
+    # st.warning(f"Advanced summarization disabled: {str(e)}")
+    TRANSFORMERS_AVAILABLE = False
 
 # Replace spaCy with NLTK for basic NLP tasks
 def simple_nlp_processing(text):
@@ -65,16 +82,6 @@ def simple_nlp_processing(text):
         'medical_terms': medical_terms,
         'numbers': numbers
     }
-
-# Try to import transformers, with proper error handling
-TRANSFORMERS_AVAILABLE = False
-try:
-    from transformers import pipeline
-    summarizer = pipeline("summarization")
-    TRANSFORMERS_AVAILABLE = True
-except (ImportError, RuntimeError, Exception) as e:
-    st.warning(f"Advanced summarization disabled: {str(e)}")
-    TRANSFORMERS_AVAILABLE = False
 
 # Define medical terms corpus for blood reports
 BLOOD_TEST_CORPUS = {
@@ -1295,7 +1302,13 @@ def main_cli():
         parser.print_help()
 
 def main():
-    st.set_page_config(page_title="Blood Report Analyzer", layout="wide")
+    # Display warnings about missing dependencies
+    if not TESSERACT_AVAILABLE:
+        st.warning("pytesseract not available. OCR functionality will be limited.")
+    if not PDF_IMAGE_AVAILABLE:
+        st.warning("pdf2image not available. PDF processing will be disabled.")
+    if not TRANSFORMERS_AVAILABLE:
+        st.warning("Advanced summarization disabled. Using basic summarization instead.")
     
     st.title("Blood Report Analyzer and Summarizer")
     st.write("Upload your blood test report (PDF or image) to get a comprehensive summary and analysis")
